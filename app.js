@@ -5,7 +5,6 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 //The default stuff for express basic app is above.
-var session = require('express-session')
 
 //Auto-compile es6 to es5 in jade
 var jade = require('jade');
@@ -86,8 +85,7 @@ app.use(function(err, req, res, next) {
   });
 });
 
-var port = process.env.PORT || 8080;
-
-http.listen(port)
-
+http.listen(process.env.PORT || 3000, function(){
+  console.log("Express server listening on port %d in %s mode", this.address().port, app.settings.env);
+});
 module.exports = app;
