@@ -1,0 +1,15 @@
+extends layout
+
+block content
+  .jumbotron
+    form#username-input(action="")
+      input.form-control(placeholder="Name")
+      button.btn-default(type="submit") Submit 
+    script.
+      $("#username-input").submit(function(){
+        var nameIn = $("input").val();
+        $.get("chat", {name: nameIn}, function(data, status){
+          $(".jumbotron").html(data)
+        });
+        return false;
+      })
