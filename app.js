@@ -86,6 +86,8 @@ app.use(function(err, req, res, next) {
   });
 });
 
-http.listen(3000)
+var port = process.env.PORT || 8080;
+
+http.listen(port)
 
 module.exports = app;
