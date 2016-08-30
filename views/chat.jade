@@ -2,15 +2,23 @@ extends layout
 username= username
 
 block content
-
+  #connectedUsers
+    
   form#chat-input.form-inline(action="")
     input.form-group(id="m" placeholder="Message"  )
     button.btn(type="submit")
   #messages
     
   script(type="text/javascript").
+    function removeListeners(listeners, socketToRemove){
+      for(var i = 0; i<listeners.length;i++){
+        socketToRemove.removeAllListeners(listeners[i])
+
+      }
+    }
     userName="#{username}";
     var socket = io();
+    removeListeners(['username return', 'update connected', 'user connection', 'chat message', 'user disconnect'], socket)
     $('#chat-input').submit(function(){
       socket.emit('chat message', {
         "username" : userName,
@@ -19,9 +27,26 @@ block content
       $('#m').val('');
       return false;
     });
+    function systemMessage(message){
+      $('#messages').append("<p><em>" + (message) + "</em></p>");
+    }
+    console.log("Sending username")
+    socket.emit('username return', {
+      "username" : userName
+    })
+    socket.on('update connected', function(data){
+      console.log(data.connected)
+      $('#connectedUsers').html('')
+      for(var i = 0; i<data.connected.length; i++){
+        $('#connectedUsers').append($('<li>').text(data.connected[i]))
+      }
+    })
+    socket.on('user connected', function(data){
+      systemMessage(data.username + " connected.");
+    })
     socket.on('chat message', function(data){
       $('#messages').append($('<p>').text(data.username + ": " + data.message));
     });
-    socket.on('system message', function(data){
-      $('#messages').append($('<em>').text(data.username + data.message));
+    socket.on('user disconnect', function(data){
+      systemMessage(data.username + " disconnected.");
     });

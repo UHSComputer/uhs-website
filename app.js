@@ -11,39 +11,82 @@ var jade = require('jade');
 
 var app = express();
 var http = require( "http" ).createServer( app );
+var io = require("socket.io")(http)
 
-var currentUsername = ""
-
+var connectedUsers = []
+var connectedSockets = []
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
 app.get("/", function(req, res){
   res.render('index')
+  io.on('connection', function(socket){
+    //Do nothing unless we are in chat room itself.
+    removeListeners(['username return', 'chat message', 'disconnect'], socket)
+  })
 })
 app.get("/chat", function(req, res){
   var name = req.param('name')
-  currentUsername = name
+  setupSocket()
   res.render('chat', {username: name})
 })
+function removeListeners(listeners, socketToRemove){
+  for(var i = 0; i<listeners.length;i++){
+    socketToRemove.removeAllListeners(listeners[i])
 
-//Socket.io below. Solution for adding it to express found here: http://stackoverflow.com/questions/24609991/using-socket-io-in-express-4-and-express-generators-bin-www
-var io = require("socket.io")(http)
+  }
+}
+function setupSocket(){
+  io.on('connection', function(socket) {
+    removeListeners(['username return', 'chat message', 'disconnect'], socket)
+    //Tell the socket all currently connected users
+    socket.on('username return', function(data){
+      console.log("user connected: " + data.username)
+      connectedUsers.push(data.username);
+      connectedSockets.push(socket)
 
-io.on('connection', function(socket) {
-  console.log("New SOCKETIO connection")
-  socket.on('chat message', function(data){
-    console.log("Got a message")
-    io.emit('chat message', data)
-  })
-  socket.on('disconnect', function(){
-    var message = " disconnected."
-    io.emit('system message', {
-      "message" : message,
-      "username" : currentUsername
+      io.emit('user connected', {
+        "username" : data.username
+      })
+      updateConnected()
+    })
+    //When a new guy joins add them to our array, send them the users.
+
+
+    socket.on('chat message', function(data){
+      console.log("Got a message")
+      io.emit('chat message', data)
+    })
+    socket.on('disconnect', function(){
+      var disconnectedUser = ''
+      var newSockets = []
+      var newUsers = []
+      console.log(connectedSockets.length - connectedUsers.length)
+      for(var i = 0; i<connectedSockets.length;i++){
+        if(connectedSockets[i].id == socket.id){
+          disconnectedUser = connectedUsers[i]
+        }
+        else{
+          newSockets.push(connectedSockets[i])
+          newUsers.push(connectedUsers[i])
+        }
+      }
+      connectedUsers = newUsers;
+      connectedSockets = newSockets;
+      io.emit('user disconnect', {
+        "username" : disconnectedUser
+      })
+      updateConnected()
+
     })
   })
-});
+}
+function updateConnected(){
+  io.emit('update connected', {
+    "connected" : connectedUsers
+  })
+}
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
@@ -88,4 +131,3 @@ app.use(function(err, req, res, next) {
 http.listen(process.env.PORT || 3000, function(){
   console.log("Express server listening on port %d in %s mode", this.address().port, app.settings.env);
 });
-module.exports = app;
