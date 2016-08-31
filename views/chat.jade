@@ -45,7 +45,34 @@ block content
       systemMessage(data.username + " connected.");
     })
     socket.on('chat message', function(data){
-      $('#messages').append($('<p>').text(data.username + ": " + data.message));
+      if(data.message.slice(0, 3).toUpperCase() == "GIF"){
+        //We got a gif request! First check if file exists in preset gif library
+        $('#messages').append('<p>' + data.username + ":</p>");
+
+        var gifTitle = data.message.slice(4).toUpperCase();        
+        var localURL = './images/' + gifTitle + '.gif'
+        $.ajax({
+          url: localURL,
+          type:'HEAD',
+          error: function()
+          {
+              //file not exists, check the internet for the url provided. 
+              $('#messages').append('<img src=\"' + data.message.slice(4) + '\" style=\"width:200px;height:200px;border:0;\">');
+              console.log(gifTitle)
+          },
+          success: function()
+          {
+              //file exists
+              $('#messages').append('<img src=\"./images/' + gifTitle + '.gif\" style=\"width:200px;height:200px;border:0;\">');
+              console.log(gifTitle)
+          }
+        });
+
+        
+      }
+      else{
+        $('#messages').append($('<p>').text(data.username + ": " + data.message));        
+      }
     });
     socket.on('user disconnect', function(data){
       systemMessage(data.username + " disconnected.");

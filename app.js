@@ -62,7 +62,6 @@ function setupSocket(){
       var disconnectedUser = ''
       var newSockets = []
       var newUsers = []
-      console.log(connectedSockets.length - connectedUsers.length)
       for(var i = 0; i<connectedSockets.length;i++){
         if(connectedSockets[i].id == socket.id){
           disconnectedUser = connectedUsers[i]
